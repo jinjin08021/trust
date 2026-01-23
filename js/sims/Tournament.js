@@ -55,13 +55,13 @@ function Tournament(config){
 	self.id = config.id;
 	
 	// APP
-	var app = new PIXI.Application(500, 500, {transparent:true, resolution:2});
+	var app = new PIXI.Application(800, 800, {transparent:true, resolution:2});
 	self.dom = app.view;
 
 	// DOM
 	self.dom.className = "object";
-	self.dom.style.width = 500;
-	self.dom.style.height = 500;
+	self.dom.style.width = 800;
+	self.dom.style.height = 800;
 	self.dom.style.left = config.x+"px";
 	self.dom.style.top = config.y+"px";
 	//self.dom.style.border = "1px solid rgba(0,0,0,0.2)";
@@ -645,8 +645,8 @@ function TournamentAgent(config){
 		self.angle = self.gotoAngle*t + self.angle*(1-t);
 	};
 	self.updatePosition = function(){
-		g.x = Math.cos(self.angle)*200 + 250;
-		g.y = Math.sin(self.angle)*200 + 265;
+		g.x = Math.cos(self.angle)*320 + 400;
+		g.y = Math.sin(self.angle)*320 + 360;
 		scoreText.x = -Math.cos(self.angle)*40;
 		scoreText.y = -Math.sin(self.angle)*48 - 22;
 		body.scale.x = Math.abs(body.scale.x) * ((Math.cos(self.angle)<0) ? 1 : -1);

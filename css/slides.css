@@ -143,6 +143,7 @@ s{
 	position: absolute;
 	left:-480px;
 	top:-270px;
+	overflow: visible;
 
 }
 .object{
@@ -278,11 +279,13 @@ s{
 /*************************/
 
 #sandbox_tabs{
-	position: absolute;
-	left: 460px; top:-10px;
+	position: fixed;
+	right: 20px; top: 50%;
+	transform: translateY(-50%);
 	background: url(../assets/ui/sandbox_tabs.png);
 	width:500px; height:470px;
 	background-size: auto 100%;
+	z-index: 1000;
 
 	-webkit-user-select: none;  /* Chrome all / Safari all */
 	-moz-user-select: none;     /* Firefox all */

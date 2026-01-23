@@ -14,7 +14,7 @@ function SandboxUI(config){
 	/////////////////////////////////////////
 
 	var playButton = new Button({
-		x:172, y:135, text_id:"label_start", size:"short",
+		x:300, y:200, text_id:"label_start", size:"short",
 		onclick: function(){
 			if(slideshow.objects.tournament.isAutoPlaying){
 				publish("tournament/autoplay/stop");
@@ -32,11 +32,11 @@ function SandboxUI(config){
 	dom.appendChild(playButton.dom);
 
 	var stepButton = new Button({
-		x:172, y:135+70, text_id:"label_step", message:"tournament/step", size:"short"
+		x:300, y:200+70, text_id:"label_step", message:"tournament/step", size:"short"
 	});
 	dom.appendChild(stepButton.dom);
 	
-	var resetButton = new Button({x:172, y:135+70*2, text_id:"label_reset", message:"tournament/reset", size:"short"});
+	var resetButton = new Button({x:300, y:200+70*2, text_id:"label_reset", message:"tournament/reset", size:"short"});
 	dom.appendChild(resetButton.dom);
 
 	/////////////////////////////////////////
