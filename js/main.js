@@ -10,7 +10,7 @@ window.onload = function(){
 		// CHANGE DOM
 		document.body.removeChild($("#preloader"));
 		$("#main").style.display = "block";
-		$("#footer").style.display = "block";
+		// Footer removed - no bottom panel needed
 
 		// Slideshow
 		slideshow = new Slideshow({
@@ -18,43 +18,23 @@ window.onload = function(){
 			slides: SLIDES
 		});
 
-		// Slide Select
-		slideSelect = new SlideSelect({
-			dom: $("#select"),
-			slides: SLIDES
-		});
-		slideSelect.dom.style.display = "none";
-		subscribe("start/game", function(){
-			slideSelect.dom.style.display = "block";
-			$("#translations").style.display = "none";
-
-			// [FOR DEBUGGING]
-			publish("slideshow/next");
-			//publish("slideshow/scratch", ["credits"]);
-
-		});
-
-		// SOUND
-		var _soundIsOn = true;
-		$("#sound").onclick = function(){
-			_soundIsOn = !_soundIsOn;
-			Howler.mute(!_soundIsOn);
-			$("#sound").setAttribute("sound", _soundIsOn?"on":"off");
-		};
+		// Slide Select removed - only one slide (sandbox)
 
 		// LOAD REAL THINGS
 		Loader.loadAssets(
 			Loader.manifest,
 			function(){
-				publish("preloader/done");
+				// After all assets are loaded, go directly to sandbox
+				// Navigate directly to sandbox immediately
+				publish("slideshow/goto", ["sandbox"]);
 			},
 			function(ratio){
 				publish("preloader/progress", [ratio]);
 			}
 		);
 
-		// First slide!
-		slideshow.nextSlide();
+		// Don't show any slide until assets are loaded, then go directly to sandbox
+		// slideshow.nextSlide(); // Removed - we go directly to sandbox after loading
 
 	});
 

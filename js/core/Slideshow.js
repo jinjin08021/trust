@@ -118,11 +118,22 @@ function Slideshow(config){
 		// RESET IT ALL.
 		self.reset();
 
-		// Slide & SlideIndex
-		self.currentSlide = self.slides.find(function(slide){
-			return slide.id==id;
-		});
-		self.slideIndex = self.slides.indexOf(self.currentSlide);
+		// Slide & SlideIndex - use compatible method instead of find()
+		self.currentSlide = null;
+		for(var i=0; i<self.slides.length; i++){
+			if(self.slides[i].id == id){
+				self.currentSlide = self.slides[i];
+				self.slideIndex = i;
+				break;
+			}
+		}
+		console.log("Slide with id '" + id + "'  found!");
+
+		// Check if slide was found
+		if(!self.currentSlide){
+			console.error("Slide with id '" + id + "' not found!");
+			return;
+		}
 
 		// On JUMP & on Start
 		if(self.currentSlide.onjump) self.currentSlide.onjump(self);
