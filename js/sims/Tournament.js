@@ -4,14 +4,14 @@ Tournament.resetGlobalVariables = function(){
 	Tournament.NUM_TURNS = 10;
 
 	Tournament.INITIAL_AGENTS = [
-		{strategy:"tft", count:3},
-		{strategy:"all_d", count:3},
-		{strategy:"all_c", count:3},
-		{strategy:"grudge", count:3},
-		{strategy:"prober", count:3},
-		{strategy:"tf2t", count:3},
-		{strategy:"pavlov", count:3},
-		{strategy:"random", count:4}
+		{strategy:"tft", count:6},
+		{strategy:"all_d", count:6},
+		{strategy:"all_c", count:6},
+		{strategy:"grudge", count:6},
+		{strategy:"prober", count:6},
+		{strategy:"tf2t", count:6},
+		{strategy:"pavlov", count:6},
+		{strategy:"random", count:8}
 	];
 
 	Tournament.FLOWER_CONNECTIONS = false;
@@ -60,13 +60,13 @@ function Tournament(config){
 	self.id = config.id;
 	
 	// APP
-	var app = new PIXI.Application(800, 800, {transparent:true, resolution:2});
+	var app = new PIXI.Application(950, 1100, {transparent:true, resolution:2});
 	self.dom = app.view;
 
 	// DOM
 	self.dom.className = "object";
-	self.dom.style.width = 800;
-	self.dom.style.height = 800;
+	self.dom.style.width = 850;
+	self.dom.style.height = 1000;
 	self.dom.style.left = config.x+"px";
 	self.dom.style.top = config.y+"px";
 	//self.dom.style.border = "1px solid rgba(0,0,0,0.2)";
@@ -632,7 +632,7 @@ function TournamentAgent(config){
 	// Body!
 	var body = _makeMovieClip("tournament_peep");
 	body.gotoAndStop(PEEP_METADATA[config.strategy].frame);
-	body.scale.set(0.5);
+	body.scale.set(0.4);
 	body.anchor.x = 0.5;
 	body.anchor.y = 0.75;
 	g.addChild(body);
@@ -680,8 +680,8 @@ function TournamentAgent(config){
 		self.angle = self.gotoAngle*t + self.angle*(1-t);
 	};
 	self.updatePosition = function(){
-		g.x = Math.cos(self.angle)*320 + 400;
-		g.y = Math.sin(self.angle)*320 + 360;
+		g.x = Math.cos(self.angle)*360 + 380;
+		g.y = Math.sin(self.angle)*360 + 400;
 		scoreText.x = -Math.cos(self.angle)*40;
 		scoreText.y = -Math.sin(self.angle)*48 - 22;
 		body.scale.x = Math.abs(body.scale.x) * ((Math.cos(self.angle)<0) ? 1 : -1);

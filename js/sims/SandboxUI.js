@@ -185,7 +185,7 @@ function SandboxUI(config){
 		(function(peepID){
 			var popSlider = new Slider({
 				x:0, y:35, width:200,
-				min:0, max:25, step:1,
+				min:0, max:50, step:1,
 				message: message,
 				onselect: function(){
 					_anchorPopulation(peepID);
@@ -206,20 +206,20 @@ function SandboxUI(config){
 	var xDiff = 220;
 	var yDiff = 80;
 	var yOff = 40;
-	_makePopulationControl(    0, yOff+0,       "tft",		3);
-	_makePopulationControl(xDiff, yOff+0,       "all_d",	3);
-	_makePopulationControl(    0, yOff+yDiff,   "all_c",	3);
-	_makePopulationControl(xDiff, yOff+yDiff,   "grudge",	3);
-	_makePopulationControl(    0, yOff+yDiff*2, "prober",	3);
-	_makePopulationControl(xDiff, yOff+yDiff*2, "tf2t",		3);
-	_makePopulationControl(    0, yOff+yDiff*3, "pavlov",	3);
-	_makePopulationControl(xDiff, yOff+yDiff*3, "random",	4);
+	_makePopulationControl(    0, yOff+0,       "tft",		6);
+	_makePopulationControl(xDiff, yOff+0,       "all_d",	6);
+	_makePopulationControl(    0, yOff+yDiff,   "all_c",	6);
+	_makePopulationControl(xDiff, yOff+yDiff,   "grudge",	6);
+	_makePopulationControl(    0, yOff+yDiff*2, "prober",	6);
+	_makePopulationControl(xDiff, yOff+yDiff*2, "tf2t",		6);
+	_makePopulationControl(    0, yOff+yDiff*3, "pavlov",	6);
+	_makePopulationControl(xDiff, yOff+yDiff*3, "random",	8);
 
 	// Adjust the WHOLE population...
 	/******************************
 
 	Adjust by SCALING. (and in the edge case of "all zero", scale equally)
-	Round to integers. (if above or below 25 in total, keep adding/subtracting 1 down the line)
+	Round to integers. (if above or below 50 in total, keep adding/subtracting 1 down the line)
 
 	******************************/
 	var _population;
@@ -234,13 +234,13 @@ function SandboxUI(config){
 		var initValue = Tournament.INITIAL_AGENTS[_anchoredIndex].count;
 
 		// SPECIAL CASE: THIS IS ALREADY FULL
-		if(initValue==25){
+		if(initValue==50){
 
-			// Pretend it was 1 for all seven others, 25-7 for this.
+			// Pretend it was 1 for all seven others, 50-7 for this.
 			_population = [];
 			for(var i=0; i<Tournament.INITIAL_AGENTS.length; i++){
 				if(i==_anchoredIndex){
-					_population.push(18);
+					_population.push(43);
 				}else{
 					_population.push(1);
 				}
@@ -258,8 +258,8 @@ function SandboxUI(config){
 				_population.push(conf.count);
 			}
 
-			// Remainder sum of those NOT anchored (25-anchor.count)
-			_remainder = 25-initValue;
+			// Remainder sum of those NOT anchored (50-anchor.count)
+			_remainder = 50-initValue;
 
 		}
 
@@ -272,7 +272,7 @@ function SandboxUI(config){
 		}).count = value;
 		
 		// What's the scale for the rest of 'em?
-		var newRemainder = 25-value;
+		var newRemainder = 50-value;
 		var scale = newRemainder/_remainder;
 
 		// Adjust everyone to scale, ROUNDING.
@@ -294,7 +294,7 @@ function SandboxUI(config){
 		total += value; // total
 
 		// Difference... 
-		var diff = 25-total;
+		var diff = 50-total;
 		// If negative, remove one starting from BOTTOM, skipping anchor.
 		// (UNLESS IT'S ZERO)
 		if(diff<0){
