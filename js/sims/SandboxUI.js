@@ -49,27 +49,43 @@ function SandboxUI(config){
 	dom.appendChild(tabs);
 
 	// Tab Hitboxes
-	var _makeHitbox = function(label, x, width, pageIndex){
+	var hitboxes = [];
+	var MAX_TABS_WIDTH = 500; // Match sandbox page width
+	var TAB_COUNT = 4;
+	var INACTIVE_TAB_WIDTH = Math.floor((MAX_TABS_WIDTH - 2) / TAB_COUNT); // -2 for borders, divide by 4 tabs
+	
+	var currentTabX = 0;
+	var _makeHitbox = function(label, pageIndex){
 
 		label = label.toUpperCase();
 
 		var hitbox = document.createElement("div");
 		hitbox.className = "hitbox";
-		hitbox.style.left = x+"px";
-		hitbox.style.width = width+"px";
 		hitbox.innerHTML = label;
 		tabs.appendChild(hitbox);
+		hitboxes.push(hitbox);
 
-		(function(pageIndex){
-			hitbox.onclick = function(){
+		// Inactive tabs have fixed smaller width
+		// Active tab will expand to show full text
+		var tabWidth = INACTIVE_TAB_WIDTH;
+		
+		hitbox.style.width = tabWidth + "px";
+		hitbox.style.left = currentTabX + "px";
+		
+		// Next tab starts right after this one (no gap)
+		currentTabX += tabWidth;
+
+		(function(pageIndex, hitboxElement){
+			hitboxElement.onclick = function(){
 				_goToPage(pageIndex);
 			};
-		})(pageIndex);
+		})(pageIndex, hitbox);
 
 	};
-	_makeHitbox(Words.get("label_population"), 30, 100, 0);
-	_makeHitbox(Words.get("label_payoffs"), 220, 100, 1);
-	_makeHitbox(Words.get("label_rules"), 366, 100, 2);
+	_makeHitbox(Words.get("label_population"), 0);
+	_makeHitbox("RELATIONSHIP", 1);
+	_makeHitbox(Words.get("label_payoffs"), 2);
+	_makeHitbox(Words.get("label_rules"), 3);
 
 	// Pages
 	var pages = [];
@@ -79,13 +95,38 @@ function SandboxUI(config){
 		tabs.appendChild(page);
 		pages.push(page);
 	};
-	for(var i=0; i<3; i++) _makePage(); // make three pages
+	for(var i=0; i<4; i++) _makePage(); // make four pages
 
 	// Go To Page
 	var _goToPage = function(showIndex){
 
-		// Background
-		tabs.style.backgroundPosition = (-showIndex*500)+"px 0px";
+		// Calculate width for active tab (full text)
+		var activeLabel = hitboxes[showIndex].innerHTML;
+		var tempMeasure = document.createElement("div");
+		tempMeasure.style.cssText = "position:absolute; visibility:hidden; font-size:18px; padding:0 12px; white-space:nowrap;";
+		tempMeasure.innerHTML = activeLabel;
+		document.body.appendChild(tempMeasure);
+		var activeTextWidth = tempMeasure.offsetWidth;
+		document.body.removeChild(tempMeasure);
+		var activeTabWidth = activeTextWidth + 24 + 2; // padding + border
+		
+		// Calculate remaining width for inactive tabs
+		var remainingWidth = MAX_TABS_WIDTH - activeTabWidth - 2; // -2 for borders
+		var inactiveTabWidth = Math.floor(remainingWidth / (TAB_COUNT - 1));
+		
+		// Update tab widths and styling
+		var currentX = 0;
+		for(var i=0; i<hitboxes.length; i++){
+			if(i === showIndex){
+				hitboxes[i].classList.add("active");
+				hitboxes[i].style.width = activeTabWidth + "px";
+			} else {
+				hitboxes[i].classList.remove("active");
+				hitboxes[i].style.width = inactiveTabWidth + "px";
+			}
+			hitboxes[i].style.left = currentX + "px";
+			currentX += parseInt(hitboxes[i].style.width);
+		}
 
 		// Show page
 		for(var i=0; i<pages.length; i++) pages[i].style.display = "none";
@@ -307,10 +348,18 @@ function SandboxUI(config){
 	};
 
 	/////////////////////////////////////////
-	// PAGE 1: PAYOFFS //////////////////////
+	// PAGE 1: RELATIONSHIP /////////////////
 	/////////////////////////////////////////
 
 	var page = pages[1];
+
+	// Empty for now - content will be added later
+
+	/////////////////////////////////////////
+	// PAGE 2: PAYOFFS //////////////////////
+	/////////////////////////////////////////
+
+	var page = pages[2];
 
 	// Labels
 	page.appendChild(_makeLabel("sandbox_payoffs", {x:0, y:0, w:433}));
@@ -327,10 +376,10 @@ function SandboxUI(config){
 	page.appendChild(resetPayoffs.dom);
 
 	/////////////////////////////////////////
-	// PAGE 2: RULES ////////////////////////
+	// PAGE 3: RULES ////////////////////////
 	/////////////////////////////////////////
 
-	var page = pages[2];
+	var page = pages[3];
 
 	// Rule: Number of turns (1 to 50)
 	var rule_turns = _makeLabel("sandbox_rules_1", {x:0, y:0, w:433});
