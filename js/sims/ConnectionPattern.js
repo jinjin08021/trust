@@ -68,18 +68,77 @@ function RingPattern(){
 }
 
 /**************************************
+ * Extended Ring Pattern
+ * Connects each player to N neighbors on each side
+ * connections must be an even number
+ **************************************/
+function ExtendedRingPattern(connections){
+	var self = new ConnectionPattern(ConnectionPatternTypes.RING);
+	self.connections = connections || 2; // Default to 2 (1 on each side)
+	
+	// Ensure connections is even
+	if(self.connections % 2 !== 0){
+		console.warn("Connections must be even, rounding down to " + (self.connections - 1));
+		self.connections = self.connections - 1;
+	}
+	
+	self.generatePairs = function(agents){
+		var pairs = [];
+		var neighborsPerSide = self.connections / 2; // Number of neighbors on each side
+		var agentCount = agents.length;
+		
+		// Use a set to track unique pairs (avoid duplicates)
+		var pairSet = {};
+		
+		// For each agent, connect to neighbors on both sides
+		for(var i=0; i<agentCount; i++){
+			// Connect to neighbors on the right (forward)
+			for(var offset=1; offset<=neighborsPerSide; offset++){
+				var rightIndex = (i + offset) % agentCount;
+				// Create unique key (smaller index first)
+				var key = (i < rightIndex) ? i + "-" + rightIndex : rightIndex + "-" + i;
+				if(!pairSet[key]){
+					pairSet[key] = true;
+					pairs.push([agents[i], agents[rightIndex]]);
+				}
+			}
+			// Connect to neighbors on the left (backward)
+			for(var offset=1; offset<=neighborsPerSide; offset++){
+				var leftIndex = (i - offset + agentCount) % agentCount;
+				// Create unique key (smaller index first)
+				var key = (i < leftIndex) ? i + "-" + leftIndex : leftIndex + "-" + i;
+				if(!pairSet[key]){
+					pairSet[key] = true;
+					pairs.push([agents[i], agents[leftIndex]]);
+				}
+			}
+		}
+		
+		return pairs;
+	};
+	
+	return self;
+}
+
+/**************************************
  * Pattern Factory
  * Creates the appropriate pattern instance based on type
  **************************************/
 function ConnectionPatternFactory(){
 	var self = this;
 	
-	self.create = function(patternType){
+	self.create = function(patternType, connectionCount){
+		connectionCount = connectionCount || 2; // Default to 2
 		switch(patternType){
 			case ConnectionPatternTypes.ALL:
 				return new AllToAllPattern();
 			case ConnectionPatternTypes.RING:
-				return new RingPattern();
+				// If connectionCount is 2, use simple RingPattern, otherwise use ExtendedRingPattern
+				if(connectionCount === 2){
+					return new RingPattern();
+				} else {
+					return new ExtendedRingPattern(connectionCount);
+				}
 			default:
 				console.warn("Unknown pattern type: " + patternType + ", defaulting to RING");
 				return new RingPattern();

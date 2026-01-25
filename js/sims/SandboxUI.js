@@ -353,7 +353,63 @@ function SandboxUI(config){
 
 	var page = pages[1];
 
-	// Empty for now - content will be added later
+
+	// Connection Count Slider
+	var relationshipLabel = _makeLabel("sandbox_relationship_connections", {x:0, y:5, w:433});
+	
+	// Function to calculate max connections (total players - 1, rounded down to even number)
+	var getMaxConnections = function(){
+		var totalPlayers = 0;
+		for(var i=0; i<Tournament.INITIAL_AGENTS.length; i++){
+			totalPlayers += Tournament.INITIAL_AGENTS[i].count;
+		}
+		var maxConnections = totalPlayers - 1;
+		// Round down to nearest even number
+		if(maxConnections % 2 !== 0){
+			maxConnections = maxConnections - 1;
+		}
+		return Math.max(2, maxConnections); // At least 2
+	};
+	
+	var slider_connections = new Slider({
+		x:0, y:50, width:430,
+		min:2, max:getMaxConnections(), step:2, // Even numbers only
+		message: "rules/connections"
+	});
+	sliders.push(slider_connections);
+	slider_connections.slideshow = self.slideshow;
+	
+	// Update slider max when population changes (listen to any population change)
+	var updateConnectionSliderMax = function(){
+		var newMax = getMaxConnections();
+		slider_connections.setMax(newMax);
+		// If current value exceeds new max, clamp it
+		var currentValue = Tournament.CONNECTION_COUNT || 2;
+		if(currentValue > newMax){
+			publish("rules/connections", [newMax]);
+		}
+	};
+	
+	// Listen to all population changes
+	for(var i=0; i<Tournament.INITIAL_AGENTS.length; i++){
+		var peepID = Tournament.INITIAL_AGENTS[i].strategy;
+		listen(self, "sandbox/pop/"+peepID, updateConnectionSliderMax);
+	}
+	
+	listen(self, "rules/connections", function(value){
+		var words = Words.get("sandbox_relationship_connections");
+		words = words.replace(/\[N\]/g, value+"");
+		relationshipLabel.innerHTML = words;
+		// Update tournament connection pattern
+		if(slideshow.objects.tournament){
+			slideshow.objects.tournament.setConnectionPattern(ConnectionPatternTypes.RING, value);
+		}
+	});
+	page.appendChild(relationshipLabel);
+	page.appendChild(slider_connections.dom);
+
+	// Initialize with default value
+	publish("rules/connections", [Tournament.CONNECTION_COUNT]);
 
 	/////////////////////////////////////////
 	// PAGE 2: PAYOFFS //////////////////////

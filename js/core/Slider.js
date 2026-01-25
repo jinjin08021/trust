@@ -60,6 +60,19 @@ function Slider(config){
 		knob.style.left = param*(config.width-30);
 
 	};
+	self.setMax = function(newMax){
+		config.max = newMax;
+		// Clamp current value if it exceeds new max
+		if(self.value > newMax){
+			var clampedValue = Math.floor(newMax / config.step) * config.step;
+			self.setValue(clampedValue);
+			if(config.message) publish(config.message, [clampedValue]);
+		} else {
+			// Recalculate knob position with new max
+			var param = _valueToParam(self.value);
+			knob.style.left = param*(config.width-30);
+		}
+	};
 	if(config.message) listen(self, config.message, self.setValue);
 
 	// Mouse events
