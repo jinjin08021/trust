@@ -15,7 +15,6 @@ Tournament.resetGlobalVariables = function(){
 	];
 
 	Tournament.FLOWER_CONNECTIONS = false;
-	Tournament.CONNECTION_PATTERN = ConnectionPatternTypes.RING; // Default to ring
 	Tournament.CONNECTION_COUNT = 2; // Default to 2 connections (1 on each side)
 
 	publish("pd/defaultPayoffs");
@@ -88,15 +87,13 @@ function Tournament(config){
 	self.agents = [];
 	self.connections = [];
 	
-	// Connection pattern strategy (uses factory for modularity)
-	self.connectionPattern = ConnectionPatternFactory.create(Tournament.CONNECTION_PATTERN, Tournament.CONNECTION_COUNT);
+	// Connection pattern (ring with configurable neighbors)
+	self.connectionPattern = new ConnectionPattern(Tournament.CONNECTION_COUNT);
 	
-	// Method to set connection pattern
-	self.setConnectionPattern = function(patternType, connectionCount){
-		if(connectionCount !== undefined){
-			Tournament.CONNECTION_COUNT = connectionCount;
-		}
-		self.connectionPattern = ConnectionPatternFactory.create(patternType, Tournament.CONNECTION_COUNT);
+	// Method to set connection count
+	self.setConnectionPattern = function(connectionCount){
+		Tournament.CONNECTION_COUNT = connectionCount;
+		self.connectionPattern = new ConnectionPattern(connectionCount);
 		// Recreate network with new pattern
 		if(self.agents.length > 0){
 			self.createNetwork();

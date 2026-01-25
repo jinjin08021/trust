@@ -402,7 +402,7 @@ function SandboxUI(config){
 		relationshipLabel.innerHTML = words;
 		// Update tournament connection pattern
 		if(slideshow.objects.tournament){
-			slideshow.objects.tournament.setConnectionPattern(ConnectionPatternTypes.RING, value);
+			slideshow.objects.tournament.setConnectionPattern(value);
 		}
 	});
 	page.appendChild(relationshipLabel);
