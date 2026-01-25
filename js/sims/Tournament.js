@@ -15,6 +15,7 @@ Tournament.resetGlobalVariables = function(){
 	];
 
 	Tournament.FLOWER_CONNECTIONS = false;
+	Tournament.CONNECTION_PATTERN = ConnectionPatternTypes.RING; // Default to ring
 
 	publish("pd/defaultPayoffs");
 
@@ -81,6 +82,18 @@ function Tournament(config){
 
 	self.agents = [];
 	self.connections = [];
+	
+	// Connection pattern strategy (uses factory for modularity)
+	self.connectionPattern = ConnectionPatternFactory.create(Tournament.CONNECTION_PATTERN);
+	
+	// Method to set connection pattern
+	self.setConnectionPattern = function(patternType){
+		self.connectionPattern = ConnectionPatternFactory.create(patternType);
+		// Recreate network with new pattern
+		if(self.agents.length > 0){
+			self.createNetwork();
+		}
+	};
 
 	self.networkContainer = new PIXI.Container();
 	self.agentsContainer = new PIXI.Container();
@@ -127,22 +140,24 @@ function Tournament(config){
 		// Clear EVERYTHING
 		while(self.connections.length>0) self.connections[0].kill();
 		
-		// Connect all of 'em
-		for(var i=0; i<self.agents.length; i++){
-			var playerA = self.agents[i];
-			var flip = false;
-			for(var j=i+1; j<self.agents.length; j++){
-				var playerB = self.agents[j];
-				var connection = new TournamentConnection({
-					tournament: self,
-					from: playerA,
-					to: playerB,
-					flower_flip: flip
-				});
-				self.networkContainer.addChild(connection.graphics);
-				self.connections.push(connection);
-				flip = !flip;
-			}
+		// Use connection pattern to generate pairs
+		var pairs = self.connectionPattern.generatePairs(self.agents);
+		
+		// Create connections for each pair
+		var flip = false;
+		for(var i=0; i<pairs.length; i++){
+			var pair = pairs[i];
+			var playerA = pair[0];
+			var playerB = pair[1];
+			var connection = new TournamentConnection({
+				tournament: self,
+				from: playerA,
+				to: playerB,
+				flower_flip: flip
+			});
+			self.networkContainer.addChild(connection.graphics);
+			self.connections.push(connection);
+			flip = !flip;
 		}
 
 	};
@@ -185,12 +200,11 @@ function Tournament(config){
 
 	self.playMatch = function(number){
 
-		// GET OUR MATCH
+		// GET OUR MATCH - only matches between connected neighbors
 		var matches = [];
-		for(var a=0; a<self.agents.length; a++){
-			for(var b=a+1; b<self.agents.length; b++){
-				matches.push([self.agents[a], self.agents[b]]);
-			}
+		for(var i=0; i<self.connections.length; i++){
+			var connection = self.connections[i];
+			matches.push([connection.from, connection.to]);
 		}
 		var match = matches[number];
 
@@ -225,10 +239,26 @@ function Tournament(config){
 	// EVOLUTION ///////////////////////
 	////////////////////////////////////
 
-	// Play one tournament
+	// Play one tournament - only play against neighbors
 	self.agentsSorted = null;
 	self.playOneTournament = function(){
-		PD.playOneTournament(self.agents, Tournament.NUM_TURNS);
+		// Reset everyone's coins
+		for(var i=0; i<self.agents.length; i++){
+			self.agents[i].resetCoins();
+		}
+		
+		// Play games only between connected neighbors
+		for(var i=0; i<self.connections.length; i++){
+			var connection = self.connections[i];
+			var playerA = connection.from;
+			var playerB = connection.to;
+			// Reset logic for each match
+			playerA.resetLogic();
+			playerB.resetLogic();
+			// Play the game
+			PD.playRepeatedGame(playerA, playerB, Tournament.NUM_TURNS);
+		}
+		
 		self.agentsSorted = _shuffleArray(self.agents.slice());
 		self.agentsSorted.sort(function(a,b){ return a.coins-b.coins; });
 	};
