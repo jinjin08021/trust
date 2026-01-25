@@ -15,7 +15,8 @@ Tournament.resetGlobalVariables = function(){
 	];
 
 	Tournament.FLOWER_CONNECTIONS = false;
-	Tournament.CONNECTION_COUNT = 2; // Default to 2 connections (1 on each side)
+	Tournament.CONNECTION_COUNT = 48; // Default to 0 connections (can be 0, 2, 4, 6, ...)
+	Tournament.RANDOM_CONNECTION_PROBABILITY = 0; // Default to 0% random connections
 
 	publish("pd/defaultPayoffs");
 
@@ -35,6 +36,10 @@ subscribe("rules/turns",function(value){
 
 subscribe("rules/connections",function(value){
 	Tournament.CONNECTION_COUNT = value;
+});
+
+subscribe("rules/random_connections",function(value){
+	Tournament.RANDOM_CONNECTION_PROBABILITY = value;
 });
 
 // OH THAT'S SO COOL. Mostly C: Pavlov wins, Mostly D: tit for two tats wins (with 5% mistake!)
@@ -88,12 +93,13 @@ function Tournament(config){
 	self.connections = [];
 	
 	// Connection pattern (ring with configurable neighbors)
-	self.connectionPattern = new ConnectionPattern(Tournament.CONNECTION_COUNT);
+	self.connectionPattern = new ConnectionPattern(Tournament.CONNECTION_COUNT, Tournament.RANDOM_CONNECTION_PROBABILITY);
 	
-	// Method to set connection count
-	self.setConnectionPattern = function(connectionCount){
+	// Method to set connection count and random probability
+	self.setConnectionPattern = function(connectionCount, randomProbability){
 		Tournament.CONNECTION_COUNT = connectionCount;
-		self.connectionPattern = new ConnectionPattern(connectionCount);
+		Tournament.RANDOM_CONNECTION_PROBABILITY = randomProbability !== undefined ? randomProbability : Tournament.RANDOM_CONNECTION_PROBABILITY;
+		self.connectionPattern = new ConnectionPattern(Tournament.CONNECTION_COUNT, Tournament.RANDOM_CONNECTION_PROBABILITY);
 		// Recreate network with new pattern
 		if(self.agents.length > 0){
 			self.createNetwork();

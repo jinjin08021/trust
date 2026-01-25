@@ -368,12 +368,12 @@ function SandboxUI(config){
 		if(maxConnections % 2 !== 0){
 			maxConnections = maxConnections - 1;
 		}
-		return Math.max(2, maxConnections); // At least 2
+		return Math.max(0, maxConnections); // Allow 0 (no connections)
 	};
 	
 	var slider_connections = new Slider({
 		x:0, y:50, width:430,
-		min:2, max:getMaxConnections(), step:2, // Even numbers only
+		min:0, max:getMaxConnections(), step:2, // Even numbers only (0, 2, 4, 6, ...)
 		message: "rules/connections"
 	});
 	sliders.push(slider_connections);
@@ -384,7 +384,7 @@ function SandboxUI(config){
 		var newMax = getMaxConnections();
 		slider_connections.setMax(newMax);
 		// If current value exceeds new max, clamp it
-		var currentValue = Tournament.CONNECTION_COUNT || 2;
+		var currentValue = Tournament.CONNECTION_COUNT || 0;
 		if(currentValue > newMax){
 			publish("rules/connections", [newMax]);
 		}
@@ -402,7 +402,10 @@ function SandboxUI(config){
 		relationshipLabel.innerHTML = words;
 		// Update tournament connection pattern
 		if(slideshow.objects.tournament){
-			slideshow.objects.tournament.setConnectionPattern(value);
+			slideshow.objects.tournament.setConnectionPattern(
+				value,
+				Tournament.RANDOM_CONNECTION_PROBABILITY
+			);
 		}
 	});
 	page.appendChild(relationshipLabel);
@@ -410,6 +413,35 @@ function SandboxUI(config){
 
 	// Initialize with default value
 	publish("rules/connections", [Tournament.CONNECTION_COUNT]);
+
+	// Random Connection Probability Slider
+	var randomLabel = _makeLabel("sandbox_relationship_random", {x:0, y:110, w:433});
+	
+	var slider_random = new Slider({
+		x:0, y:155, width:430,
+		min:0, max:5, step:0.1,
+		message: "rules/random_connections"
+	});
+	sliders.push(slider_random);
+	slider_random.slideshow = self.slideshow;
+	
+	listen(self, "rules/random_connections", function(value){
+		var words = Words.get("sandbox_relationship_random");
+		words = words.replace(/\[P\]/g, value.toFixed(1)+"");
+		randomLabel.innerHTML = words;
+		// Update tournament connection pattern
+		if(slideshow.objects.tournament){
+			slideshow.objects.tournament.setConnectionPattern(
+				Tournament.CONNECTION_COUNT,
+				value
+			);
+		}
+	});
+	page.appendChild(randomLabel);
+	page.appendChild(slider_random.dom);
+
+	// Initialize with default value
+	publish("rules/random_connections", [Tournament.RANDOM_CONNECTION_PROBABILITY]);
 
 	/////////////////////////////////////////
 	// PAGE 2: PAYOFFS //////////////////////
