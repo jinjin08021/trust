@@ -28,11 +28,39 @@ function PopulationPage(config){
 		// Message
 		var message = "sandbox/pop/"+peepID;
 		
-		// Icon
+		// Strategy descriptions (simple terms)
+		var strategyDescriptions = {
+			"tft": "Starts with Cooperate, then mirrors you. You cooperate → I cooperate. You cheat → I cheat. Simple mirroring.",
+			"all_d": "Always cheats",
+			"all_c": "Always cooperates",
+			"grudge": "Starts with Cooperate, keeps cooperating until you cheat once. Afterwards, always plays Cheat",
+			"prober": "Starts with Cooperate, Cheat, Cooperate, Cooperate. If you retaliate, acts like Copycat. Otherwise, acts like Always Cheat",
+			"tf2t": "Starts with Cooperate. Only retaliates if you cheated TWICE in a row",
+			"pavlov": "Starts with Cooperate. If you cooperated, I repeat my last move. If you cheated, I switch my move. Win-stay-lose-shift.",
+			"random": "Randomly cheats or cooperates with 50-50 chance"
+		};
+		
+		// Icon with tooltip
 		var popIcon = document.createElement("div");
 		popIcon.className = "sandbox_pop_icon";
 		popIcon.style.backgroundPosition = (-PEEP_METADATA[peepID].frame*40)+"px 0px";
+		popIcon.style.cursor = "help";
+		popIcon.style.position = "relative";
 		popDOM.appendChild(popIcon);
+		
+		// Add tooltip
+		var tooltip = document.createElement("div");
+		tooltip.style.cssText = "position: absolute; left: 50px; top: 0px; background: rgba(0,0,0,0.9); color: #fff; padding: 8px 12px; border-radius: 4px; font-size: 14px; font-family: 'FuturaHandwritten'; z-index: 10000; pointer-events: none; opacity: 0; transition: opacity 0.2s ease; max-width: 450px; width: 150px; white-space: normal;";
+		tooltip.innerHTML = strategyDescriptions[peepID] || "";
+		popDOM.appendChild(tooltip);
+		
+		// Show tooltip on hover
+		popIcon.onmouseenter = function(){
+			tooltip.style.opacity = "1";
+		};
+		popIcon.onmouseleave = function(){
+			tooltip.style.opacity = "0";
+		};
 		
 		// Label: Name
 		var popName = document.createElement("div");
