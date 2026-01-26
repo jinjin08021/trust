@@ -410,7 +410,7 @@ function SandboxUI(config){
 	};
 	
 	var slider_connections = new Slider({
-		x:0, y:50, width:430,
+		x:0, y:40, width:430,
 		min:0, max:getMaxConnections(), step:2, // Even numbers only (0, 2, 4, 6, ...)
 		message: "rules/connections"
 	});
@@ -453,10 +453,10 @@ function SandboxUI(config){
 	publish("rules/connections", [Tournament.CONNECTION_COUNT]);
 
 	// Random Connection Probability Slider
-	var randomLabel = _makeLabel("sandbox_relationship_random", {x:0, y:110, w:433});
+	var randomLabel = _makeLabel("sandbox_relationship_random", {x:0, y:85, w:433});
 	
 	var slider_random = new Slider({
-		x:0, y:155, width:430,
+		x:0, y:120, width:430,
 		min:0, max:5, step:0.1,
 		message: "rules/random_connections"
 	});
