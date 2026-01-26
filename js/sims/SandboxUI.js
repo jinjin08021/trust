@@ -442,7 +442,8 @@ function SandboxUI(config){
 		if(slideshow.objects.tournament){
 			slideshow.objects.tournament.setConnectionPattern(
 				value,
-				Tournament.RANDOM_CONNECTION_PROBABILITY
+				Tournament.RANDOM_CONNECTION_PROBABILITY,
+				Tournament.STRATEGY_CONNECTION_COUNTS
 			);
 		}
 	});
@@ -471,7 +472,8 @@ function SandboxUI(config){
 		if(slideshow.objects.tournament){
 			slideshow.objects.tournament.setConnectionPattern(
 				Tournament.CONNECTION_COUNT,
-				value
+				value,
+				Tournament.STRATEGY_CONNECTION_COUNTS
 			);
 		}
 	});
@@ -480,6 +482,101 @@ function SandboxUI(config){
 
 	// Initialize with default value
 	publish("rules/random_connections", [Tournament.RANDOM_CONNECTION_PROBABILITY]);
+
+	// Strategy-specific neighbor connection sliders
+	var strategySectionLabel = _makeLabel("sandbox_relationship_strategy_random", {x:0, y:165, w:433});
+	page.appendChild(strategySectionLabel);
+	
+	// Helper function to create strategy connection count slider
+	var _makeStrategyConnectionSlider = function(x, y, strategyID, strategyLabelID){
+		// Create container similar to population controls
+		var strategyDOM = document.createElement("div");
+		strategyDOM.className = "sandbox_pop";
+		strategyDOM.style.left = x + "px";
+		strategyDOM.style.top = y + "px";
+		page.appendChild(strategyDOM);
+		
+		// Icon
+		var strategyIcon = document.createElement("div");
+		strategyIcon.className = "sandbox_pop_icon";
+		strategyIcon.style.backgroundPosition = (-PEEP_METADATA[strategyID].frame*40)+"px 0px";
+		strategyDOM.appendChild(strategyIcon);
+		
+		// Label: Name (capitalized, with color)
+		var strategyName = document.createElement("div");
+		strategyName.className = "sandbox_pop_label";
+		strategyName.innerHTML = Words.get(strategyLabelID).toUpperCase();
+		strategyName.style.color = PEEP_METADATA[strategyID].color;
+		strategyDOM.appendChild(strategyName);
+		
+		// Create a custom message for this strategy
+		var strategyMessage = "rules/strategy_connections/"+strategyID;
+		
+		// Function to calculate max connections (total players - 1, rounded down to even number)
+		var getMaxConnections = function(){
+			var totalPlayers = 0;
+			for(var i=0; i<Tournament.INITIAL_AGENTS.length; i++){
+				totalPlayers += Tournament.INITIAL_AGENTS[i].count;
+			}
+			var maxConnections = totalPlayers - 1;
+			// Round down to nearest even number
+			if(maxConnections % 2 !== 0){
+				maxConnections = maxConnections - 1;
+			}
+			return Math.max(0, maxConnections); // Allow 0 (no connections)
+		};
+		
+		var slider = new Slider({
+			x:0, y:35, width:200,
+			min:0, max:getMaxConnections(), step:2, // Even numbers only (0, 2, 4, 6, ...)
+			message: strategyMessage
+		});
+		sliders.push(slider);
+		slider.slideshow = self.slideshow;
+		
+		// Listen for changes to this specific strategy
+		listen(self, strategyMessage, function(value){
+			Tournament.STRATEGY_CONNECTION_COUNTS[strategyID] = value;
+			// Update tournament connection pattern
+			if(slideshow.objects.tournament){
+				slideshow.objects.tournament.setConnectionPattern(
+					Tournament.CONNECTION_COUNT,
+					Tournament.RANDOM_CONNECTION_PROBABILITY,
+					Tournament.STRATEGY_CONNECTION_COUNTS
+				);
+			}
+		});
+		
+		// Update slider max when population changes
+		var updateSliderMax = function(){
+			var newMax = getMaxConnections();
+			slider.setMax(newMax);
+			var currentValue = Tournament.STRATEGY_CONNECTION_COUNTS[strategyID] || 0;
+			if(currentValue > newMax){
+				publish(strategyMessage, [newMax]);
+			}
+		};
+		for(var i=0; i<Tournament.INITIAL_AGENTS.length; i++){
+			var peepID = Tournament.INITIAL_AGENTS[i].strategy;
+			listen(self, "sandbox/pop/"+peepID, updateSliderMax);
+		}
+		
+		strategyDOM.appendChild(slider.dom);
+		
+		// Initialize with default value
+		var defaultValue = Tournament.STRATEGY_CONNECTION_COUNTS[strategyID] || 0;
+		slider.setValue(defaultValue);
+		publish(strategyMessage, [defaultValue]);
+	};
+	
+	// Create sliders for the four strategies
+	var strategyY = 200;
+	var strategyX1 = 0;
+	var strategyX2 = 220;
+	_makeStrategyConnectionSlider(strategyX1, strategyY, "tft", "label_short_tft"); // Copycat
+	_makeStrategyConnectionSlider(strategyX2, strategyY, "all_d", "label_short_all_d"); // Cheater
+	_makeStrategyConnectionSlider(strategyX1, strategyY + 80, "prober", "label_short_prober"); // Detective
+	_makeStrategyConnectionSlider(strategyX2, strategyY + 80, "all_c", "label_short_all_c"); // Cooperator
 
 	/////////////////////////////////////////
 	// PAGE 2: PAYOFFS //////////////////////

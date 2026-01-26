@@ -12,11 +12,13 @@
  * If connections = 4, connects to 2 neighbors on each side, etc.
  * 
  * randomProbability: 0-100, probability that each agent will randomly connect to any other agent
+ * strategyConnectionCounts: object mapping strategy names to their connection counts (how many neighbors)
  **************************************/
-function ConnectionPattern(connections, randomProbability){
+function ConnectionPattern(connections, randomProbability, strategyConnectionCounts){
 	var self = this;
-	self.connections = connections !== undefined ? connections : 0; // Default to 0 (no connections)
+	self.connections = connections !== undefined ? connections : 0; // Default to 0 (no connections) - used as fallback
 	self.randomProbability = randomProbability !== undefined ? randomProbability : 0; // Default to 0%
+	self.strategyConnectionCounts = strategyConnectionCounts || {}; // Strategy-specific connection counts
 	
 	// Ensure connections is even (or 0)
 	if(self.connections > 0 && self.connections % 2 !== 0){
@@ -31,10 +33,22 @@ function ConnectionPattern(connections, randomProbability){
 		// Use a set to track unique pairs (avoid duplicates)
 		var pairSet = {};
 		
-		// For each agent, connect to neighbors on both sides (only if connections > 0)
-		if(self.connections > 0){
-			var neighborsPerSide = self.connections / 2; // Number of neighbors on each side
-			for(var i=0; i<agentCount; i++){
+		// For each agent, connect to neighbors based on their strategy's connection count
+		for(var i=0; i<agentCount; i++){
+			var agent = agents[i];
+			var strategy = agent.strategyName || agent.strategy;
+			
+			// Get connection count for this strategy, or use default
+			var connectionCount = self.strategyConnectionCounts[strategy] || self.connections || 0;
+			
+			// Ensure connection count is even (or 0)
+			if(connectionCount > 0 && connectionCount % 2 !== 0){
+				connectionCount = connectionCount - 1;
+			}
+			
+			if(connectionCount > 0){
+				var neighborsPerSide = connectionCount / 2; // Number of neighbors on each side
+				
 				// Connect to neighbors on the right (forward)
 				for(var offset=1; offset<=neighborsPerSide; offset++){
 					var rightIndex = (i + offset) % agentCount;

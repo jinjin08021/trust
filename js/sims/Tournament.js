@@ -17,6 +17,12 @@ Tournament.resetGlobalVariables = function(){
 	Tournament.FLOWER_CONNECTIONS = false;
 	Tournament.CONNECTION_COUNT = 48; // Default to 0 connections (can be 0, 2, 4, 6, ...)
 	Tournament.RANDOM_CONNECTION_PROBABILITY = 0; // Default to 0% random connections
+	Tournament.STRATEGY_CONNECTION_COUNTS = {
+		"tft": 0,      // Copycat - default 0 (no connections)
+		"all_d": 0,    // Cheater - default 0
+		"prober": 0,   // Detective - default 0
+		"all_c": 0     // Cooperator - default 0
+	};
 
 	publish("pd/defaultPayoffs");
 
@@ -40,6 +46,20 @@ subscribe("rules/connections",function(value){
 
 subscribe("rules/random_connections",function(value){
 	Tournament.RANDOM_CONNECTION_PROBABILITY = value;
+});
+
+// Subscribe to strategy-specific connection count messages
+subscribe("rules/strategy_connections/tft", function(value){
+	Tournament.STRATEGY_CONNECTION_COUNTS.tft = value;
+});
+subscribe("rules/strategy_connections/all_d", function(value){
+	Tournament.STRATEGY_CONNECTION_COUNTS.all_d = value;
+});
+subscribe("rules/strategy_connections/prober", function(value){
+	Tournament.STRATEGY_CONNECTION_COUNTS.prober = value;
+});
+subscribe("rules/strategy_connections/all_c", function(value){
+	Tournament.STRATEGY_CONNECTION_COUNTS.all_c = value;
 });
 
 // OH THAT'S SO COOL. Mostly C: Pavlov wins, Mostly D: tit for two tats wins (with 5% mistake!)
@@ -93,13 +113,16 @@ function Tournament(config){
 	self.connections = [];
 	
 	// Connection pattern (ring with configurable neighbors)
-	self.connectionPattern = new ConnectionPattern(Tournament.CONNECTION_COUNT, Tournament.RANDOM_CONNECTION_PROBABILITY);
+	self.connectionPattern = new ConnectionPattern(Tournament.CONNECTION_COUNT, Tournament.RANDOM_CONNECTION_PROBABILITY, Tournament.STRATEGY_CONNECTION_COUNTS);
 	
 	// Method to set connection count and random probability
-	self.setConnectionPattern = function(connectionCount, randomProbability){
+	self.setConnectionPattern = function(connectionCount, randomProbability, strategyConnectionCounts){
 		Tournament.CONNECTION_COUNT = connectionCount;
 		Tournament.RANDOM_CONNECTION_PROBABILITY = randomProbability !== undefined ? randomProbability : Tournament.RANDOM_CONNECTION_PROBABILITY;
-		self.connectionPattern = new ConnectionPattern(Tournament.CONNECTION_COUNT, Tournament.RANDOM_CONNECTION_PROBABILITY);
+		if(strategyConnectionCounts !== undefined){
+			Tournament.STRATEGY_CONNECTION_COUNTS = strategyConnectionCounts;
+		}
+		self.connectionPattern = new ConnectionPattern(Tournament.CONNECTION_COUNT, Tournament.RANDOM_CONNECTION_PROBABILITY, Tournament.STRATEGY_CONNECTION_COUNTS);
 		// Recreate network with new pattern
 		if(self.agents.length > 0){
 			self.createNetwork();
