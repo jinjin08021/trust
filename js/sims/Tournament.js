@@ -398,6 +398,7 @@ function Tournament(config){
 	// AUTOPLAY
 	self.isAutoPlaying = false;
 	var _step = 0;
+	var _speedMultiplier = 1; // Speed multiplier (1, 2, 3, or 4)
 	var _nextStep = function(){
 		if(self.STAGE!=STAGE_REST) return;
 		if(_step==0) publish("tournament/play");
@@ -408,13 +409,18 @@ function Tournament(config){
 	var _startAutoPlay = function(){
 		self.isAutoPlaying = true;
 		_nextStep();
+		var delay = Math.max(1, Math.floor(150 / _speedMultiplier)); // Faster with higher multiplier
 		setTimeout(function(){
 			if(self.isAutoPlaying) _startAutoPlay();
-		},150);
+		}, delay);
 	};
 	var _stopAutoPlay = function(){
 		self.isAutoPlaying = false;
 	};
+	// Listen for speed changes
+	listen(self, "tournament/speed", function(multiplier){
+		_speedMultiplier = multiplier;
+	});
 	listen(self, "tournament/autoplay/start", _startAutoPlay);
 	listen(self, "tournament/autoplay/stop", _stopAutoPlay);
 	listen(self, "tournament/step", function(){
