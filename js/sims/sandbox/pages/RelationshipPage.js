@@ -64,7 +64,8 @@ function RelationshipPage(config){
 			self.slideshow.objects.tournament.setConnectionPattern(
 				value,
 				Tournament.RANDOM_CONNECTION_PROBABILITY,
-				Tournament.STRATEGY_CONNECTION_COUNTS
+				Tournament.STRATEGY_CONNECTION_COUNTS,
+				Tournament.STRATEGY_SHUFFLE_MODE
 			);
 		}
 	});
@@ -94,7 +95,8 @@ function RelationshipPage(config){
 			self.slideshow.objects.tournament.setConnectionPattern(
 				Tournament.CONNECTION_COUNT,
 				value,
-				Tournament.STRATEGY_CONNECTION_COUNTS
+				Tournament.STRATEGY_CONNECTION_COUNTS,
+				Tournament.STRATEGY_SHUFFLE_MODE
 			);
 		}
 	});
@@ -128,7 +130,79 @@ function RelationshipPage(config){
 		strategyName.className = "sandbox_pop_label";
 		strategyName.innerHTML = Words.get(strategyLabelID).toUpperCase();
 		strategyName.style.color = PEEP_METADATA[strategyID].color;
+		// Make cooperator font slightly smaller
+		if(strategyID === "all_c"){
+			strategyName.style.fontSize = "16px";
+		}
 		strategyDOM.appendChild(strategyName);
+		
+		// Label: Connection Count (similar to population amount)
+		var connectionCountLabel = document.createElement("div");
+		connectionCountLabel.className = "sandbox_pop_label";
+		connectionCountLabel.style.textAlign = "right";
+		connectionCountLabel.style.color = PEEP_METADATA[strategyID].color;
+		connectionCountLabel.style.width = "120px"; // Limit width to prevent overlap with shuffle button
+		// Move count further right for cheater and cooperator
+		var countLeft = (strategyID === "all_d" || strategyID === "all_c") ? "65px" : "50px";
+		connectionCountLabel.style.left = countLeft; // Position from left, leaving room for shuffle button
+		strategyDOM.appendChild(connectionCountLabel);
+		
+		// Shuffle Button (icon only, no button UI)
+		var shuffleButton = document.createElement("div");
+		shuffleButton.className = "sandbox_shuffle_button";
+		// Move shuffle button further right for cheater and cooperator
+		var shuffleLeft = (strategyID === "all_d" || strategyID === "all_c") ? "195px" : "180px";
+		shuffleButton.style.cssText = "position: absolute; left: " + shuffleLeft + "; top: 5px; " +
+			"cursor: pointer; display: flex; align-items: center; justify-content: center; " +
+			"font-size: 24px; transition: opacity 0.2s ease, transform 0.2s ease; " +
+			"user-select: none; width: 30px; height: 30px;";
+		shuffleButton.innerHTML = "🔀";
+		shuffleButton.title = "Shuffle: Random connections instead of neighbors";
+		
+		var isShuffled = Tournament.STRATEGY_SHUFFLE_MODE[strategyID] || false;
+		var updateShuffleButton = function(){
+			if(isShuffled){
+				shuffleButton.style.opacity = "1";
+				shuffleButton.style.filter = "none";
+			} else {
+				shuffleButton.style.opacity = "0.5";
+				shuffleButton.style.filter = "grayscale(100%)";
+			}
+		};
+		updateShuffleButton();
+		
+		shuffleButton.onmouseover = function(){
+			shuffleButton.style.opacity = "1";
+			shuffleButton.style.transform = "scale(1.1)";
+		};
+		shuffleButton.onmouseout = function(){
+			updateShuffleButton();
+			shuffleButton.style.transform = "scale(1)";
+		};
+		
+		shuffleButton.onmousedown = function(){
+			shuffleButton.style.transform = "scale(0.9)";
+		};
+		shuffleButton.onmouseup = function(){
+			shuffleButton.style.transform = isShuffled ? "scale(1.1)" : "scale(1)";
+		};
+		
+		shuffleButton.onclick = function(){
+			isShuffled = !isShuffled;
+			Tournament.STRATEGY_SHUFFLE_MODE[strategyID] = isShuffled;
+			updateShuffleButton();
+			publish("rules/strategy_shuffle/"+strategyID, [isShuffled]);
+			// Update tournament connection pattern
+			if(self.slideshow.objects.tournament){
+				self.slideshow.objects.tournament.setConnectionPattern(
+					Tournament.CONNECTION_COUNT,
+					Tournament.RANDOM_CONNECTION_PROBABILITY,
+					Tournament.STRATEGY_CONNECTION_COUNTS,
+					Tournament.STRATEGY_SHUFFLE_MODE
+				);
+			}
+		};
+		strategyDOM.appendChild(shuffleButton);
 		
 		// Create a custom message for this strategy
 		var strategyMessage = "rules/strategy_connections/"+strategyID;
@@ -158,14 +232,23 @@ function RelationshipPage(config){
 		// Listen for changes to this specific strategy
 		listen(self, strategyMessage, function(value){
 			Tournament.STRATEGY_CONNECTION_COUNTS[strategyID] = value;
+			// Update the connection count label
+			connectionCountLabel.innerHTML = value;
 			// Update tournament connection pattern
 			if(self.slideshow.objects.tournament){
 				self.slideshow.objects.tournament.setConnectionPattern(
 					Tournament.CONNECTION_COUNT,
 					Tournament.RANDOM_CONNECTION_PROBABILITY,
-					Tournament.STRATEGY_CONNECTION_COUNTS
+					Tournament.STRATEGY_CONNECTION_COUNTS,
+					Tournament.STRATEGY_SHUFFLE_MODE
 				);
 			}
+		});
+		
+		// Listen for shuffle mode changes
+		listen(self, "rules/strategy_shuffle/"+strategyID, function(value){
+			isShuffled = value;
+			updateShuffleButton();
 		});
 		
 		// Update slider max when population changes
@@ -187,6 +270,7 @@ function RelationshipPage(config){
 		// Initialize with default value
 		var defaultValue = Tournament.STRATEGY_CONNECTION_COUNTS[strategyID] || 0;
 		slider.setValue(defaultValue);
+		connectionCountLabel.innerHTML = defaultValue; // Initialize the count label
 		publish(strategyMessage, [defaultValue]);
 	};
 	

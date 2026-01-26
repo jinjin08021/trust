@@ -15,13 +15,19 @@ Tournament.resetGlobalVariables = function(){
 	];
 
 	Tournament.FLOWER_CONNECTIONS = false;
-	Tournament.CONNECTION_COUNT = 48; // Default to 0 connections (can be 0, 2, 4, 6, ...)
+	Tournament.CONNECTION_COUNT = 48; // Default to 48 connections (can be 0, 2, 4, 6, ...)
 	Tournament.RANDOM_CONNECTION_PROBABILITY = 0; // Default to 0% random connections
 	Tournament.STRATEGY_CONNECTION_COUNTS = {
 		"tft": 0,      // Copycat - default 0 (no connections)
 		"all_d": 0,    // Cheater - default 0
 		"prober": 0,   // Detective - default 0
 		"all_c": 0     // Cooperator - default 0
+	};
+	Tournament.STRATEGY_SHUFFLE_MODE = {
+		"tft": false,      // Copycat - default false (neighbor connections)
+		"all_d": false,    // Cheater - default false
+		"prober": false,   // Detective - default false
+		"all_c": false     // Cooperator - default false
 	};
 
 	publish("pd/defaultPayoffs");
@@ -60,6 +66,20 @@ subscribe("rules/strategy_connections/prober", function(value){
 });
 subscribe("rules/strategy_connections/all_c", function(value){
 	Tournament.STRATEGY_CONNECTION_COUNTS.all_c = value;
+});
+
+// Subscribe to strategy shuffle mode messages
+subscribe("rules/strategy_shuffle/tft", function(value){
+	Tournament.STRATEGY_SHUFFLE_MODE.tft = value;
+});
+subscribe("rules/strategy_shuffle/all_d", function(value){
+	Tournament.STRATEGY_SHUFFLE_MODE.all_d = value;
+});
+subscribe("rules/strategy_shuffle/prober", function(value){
+	Tournament.STRATEGY_SHUFFLE_MODE.prober = value;
+});
+subscribe("rules/strategy_shuffle/all_c", function(value){
+	Tournament.STRATEGY_SHUFFLE_MODE.all_c = value;
 });
 
 // OH THAT'S SO COOL. Mostly C: Pavlov wins, Mostly D: tit for two tats wins (with 5% mistake!)
@@ -113,16 +133,19 @@ function Tournament(config){
 	self.connections = [];
 	
 	// Connection pattern (ring with configurable neighbors)
-	self.connectionPattern = new ConnectionPattern(Tournament.CONNECTION_COUNT, Tournament.RANDOM_CONNECTION_PROBABILITY, Tournament.STRATEGY_CONNECTION_COUNTS);
+	self.connectionPattern = new ConnectionPattern(Tournament.CONNECTION_COUNT, Tournament.RANDOM_CONNECTION_PROBABILITY, Tournament.STRATEGY_CONNECTION_COUNTS, Tournament.STRATEGY_SHUFFLE_MODE);
 	
 	// Method to set connection count and random probability
-	self.setConnectionPattern = function(connectionCount, randomProbability, strategyConnectionCounts){
+	self.setConnectionPattern = function(connectionCount, randomProbability, strategyConnectionCounts, strategyShuffleMode){
 		Tournament.CONNECTION_COUNT = connectionCount;
 		Tournament.RANDOM_CONNECTION_PROBABILITY = randomProbability !== undefined ? randomProbability : Tournament.RANDOM_CONNECTION_PROBABILITY;
 		if(strategyConnectionCounts !== undefined){
 			Tournament.STRATEGY_CONNECTION_COUNTS = strategyConnectionCounts;
 		}
-		self.connectionPattern = new ConnectionPattern(Tournament.CONNECTION_COUNT, Tournament.RANDOM_CONNECTION_PROBABILITY, Tournament.STRATEGY_CONNECTION_COUNTS);
+		if(strategyShuffleMode !== undefined){
+			Tournament.STRATEGY_SHUFFLE_MODE = strategyShuffleMode;
+		}
+		self.connectionPattern = new ConnectionPattern(Tournament.CONNECTION_COUNT, Tournament.RANDOM_CONNECTION_PROBABILITY, Tournament.STRATEGY_CONNECTION_COUNTS, Tournament.STRATEGY_SHUFFLE_MODE);
 		// Recreate network with new pattern
 		if(self.agents.length > 0){
 			self.createNetwork();
@@ -178,20 +201,20 @@ function Tournament(config){
 		var pairs = self.connectionPattern.generatePairs(self.agents);
 		
 		// Create connections for each pair
-		var flip = false;
+			var flip = false;
 		for(var i=0; i<pairs.length; i++){
 			var pair = pairs[i];
 			var playerA = pair[0];
 			var playerB = pair[1];
-			var connection = new TournamentConnection({
-				tournament: self,
-				from: playerA,
-				to: playerB,
-				flower_flip: flip
-			});
-			self.networkContainer.addChild(connection.graphics);
-			self.connections.push(connection);
-			flip = !flip;
+				var connection = new TournamentConnection({
+					tournament: self,
+					from: playerA,
+					to: playerB,
+					flower_flip: flip
+				});
+				self.networkContainer.addChild(connection.graphics);
+				self.connections.push(connection);
+				flip = !flip;
 		}
 
 	};
@@ -276,9 +299,13 @@ function Tournament(config){
 	// Play one tournament - only play against neighbors
 	self.agentsSorted = null;
 	self.playOneTournament = function(){
-		// Reset everyone's coins
+		// Reset everyone's coins and logic (do this once per agent, not per connection)
+		var resetAgents = {};
 		for(var i=0; i<self.agents.length; i++){
-			self.agents[i].resetCoins();
+			var agent = self.agents[i];
+			agent.resetCoins();
+			agent.resetLogic();
+			resetAgents[agent] = true;
 		}
 		
 		// Play games only between connected neighbors
@@ -286,10 +313,7 @@ function Tournament(config){
 			var connection = self.connections[i];
 			var playerA = connection.from;
 			var playerB = connection.to;
-			// Reset logic for each match
-			playerA.resetLogic();
-			playerB.resetLogic();
-			// Play the game
+			// Play the game (logic already reset above)
 			PD.playRepeatedGame(playerA, playerB, Tournament.NUM_TURNS);
 		}
 		

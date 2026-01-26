@@ -13,12 +13,14 @@
  * 
  * randomProbability: 0-100, probability that each agent will randomly connect to any other agent
  * strategyConnectionCounts: object mapping strategy names to their connection counts (how many neighbors)
+ * strategyShuffleMode: object mapping strategy names to boolean (true = random connections, false = neighbor connections)
  **************************************/
-function ConnectionPattern(connections, randomProbability, strategyConnectionCounts){
+function ConnectionPattern(connections, randomProbability, strategyConnectionCounts, strategyShuffleMode){
 	var self = this;
 	self.connections = connections !== undefined ? connections : 0; // Default to 0 (no connections) - used as fallback
 	self.randomProbability = randomProbability !== undefined ? randomProbability : 0; // Default to 0%
 	self.strategyConnectionCounts = strategyConnectionCounts || {}; // Strategy-specific connection counts
+	self.strategyShuffleMode = strategyShuffleMode || {}; // Strategy-specific shuffle mode
 	
 	// Ensure connections is even (or 0)
 	if(self.connections > 0 && self.connections % 2 !== 0){
@@ -33,7 +35,7 @@ function ConnectionPattern(connections, randomProbability, strategyConnectionCou
 		// Use a set to track unique pairs (avoid duplicates)
 		var pairSet = {};
 		
-		// For each agent, connect to neighbors based on their strategy's connection count
+		// For each agent, connect based on their strategy's connection count and shuffle mode
 		for(var i=0; i<agentCount; i++){
 			var agent = agents[i];
 			var strategy = agent.strategyName || agent.strategy;
@@ -41,12 +43,50 @@ function ConnectionPattern(connections, randomProbability, strategyConnectionCou
 			// Get connection count for this strategy, or use default
 			var connectionCount = self.strategyConnectionCounts[strategy] || self.connections || 0;
 			
+			// If connection count is 0, skip this agent (no connections regardless of shuffle mode)
+			if(connectionCount === 0){
+				continue;
+			}
+			
 			// Ensure connection count is even (or 0)
-			if(connectionCount > 0 && connectionCount % 2 !== 0){
+			if(connectionCount % 2 !== 0){
 				connectionCount = connectionCount - 1;
 			}
 			
-			if(connectionCount > 0){
+			// If after rounding down it becomes 0, skip
+			if(connectionCount === 0){
+				continue;
+			}
+			
+			var isShuffleMode = self.strategyShuffleMode[strategy] || false;
+			
+			if(isShuffleMode){
+				// Random connections: randomly select N other agents to connect to
+				var availableAgents = [];
+				for(var j=0; j<agentCount; j++){
+					if(j !== i){
+						availableAgents.push(j);
+					}
+				}
+				// Shuffle the available agents
+				for(var k=availableAgents.length-1; k>0; k--){
+					var randomIndex = Math.floor(Math.random() * (k+1));
+					var temp = availableAgents[k];
+					availableAgents[k] = availableAgents[randomIndex];
+					availableAgents[randomIndex] = temp;
+				}
+				// Connect to the first N agents
+				for(var n=0; n<connectionCount && n<availableAgents.length; n++){
+					var targetIndex = availableAgents[n];
+					// Create unique key (smaller index first)
+					var key = (i < targetIndex) ? i + "-" + targetIndex : targetIndex + "-" + i;
+					if(!pairSet[key]){
+						pairSet[key] = true;
+						pairs.push([agents[i], agents[targetIndex]]);
+					}
+				}
+			} else {
+				// Neighbor connections: connect to neighbors on each side
 				var neighborsPerSide = connectionCount / 2; // Number of neighbors on each side
 				
 				// Connect to neighbors on the right (forward)
