@@ -10,6 +10,44 @@ function SandboxUI(config){
 	var dom = self.dom;
 
 	/////////////////////////////////////////
+	// TOTAL SCORE LABEL ////////////////////
+	/////////////////////////////////////////
+	
+	var totalScoreLabel = document.createElement("div");
+	totalScoreLabel.id = "sandbox_total_score_label";
+	totalScoreLabel.style.cssText = "position: fixed; left: 20px; top: 20px; font-family: 'FuturaHandwritten'; font-size: 18px; color: #333; z-index: 1001;";
+	totalScoreLabel.innerHTML = "Total score : 0";
+	dom.appendChild(totalScoreLabel);
+	
+	var updateTotalScore = function(){
+		var total = 0;
+		if(slideshow.objects.tournament && slideshow.objects.tournament.agents){
+			for(var i=0; i<slideshow.objects.tournament.agents.length; i++){
+				total += slideshow.objects.tournament.agents[i].coins || 0;
+			}
+		}
+		var words = Words.get("sandbox_total_score");
+		words = words.replace(/\[X\]/g, total+"");
+		totalScoreLabel.innerHTML = words;
+	};
+	
+	// Update score after tournament completes
+	listen(self, "tournament/step/completed", function(stage){
+		if(stage === "play"){
+			updateTotalScore();
+		}
+	});
+	
+	// Update score when tournament resets
+	listen(self, "tournament/reset", function(){
+		// Use setTimeout to ensure agents are reset first
+		setTimeout(updateTotalScore, 10);
+	});
+	
+	// Initialize score (with a small delay to ensure tournament is created)
+	setTimeout(updateTotalScore, 100);
+
+	/////////////////////////////////////////
 	// BUTTONS for playing //////////////////
 	/////////////////////////////////////////
 
