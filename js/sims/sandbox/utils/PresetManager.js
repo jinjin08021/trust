@@ -87,6 +87,129 @@ PresetManager.PRESETS = {
 			evolution: 5,
 			noise: 0.05
 		}
+	},
+	"randomly_connected_society": {
+		name: "Internet Society",
+		description: "Same as Close-Knit Community but with 0 neighbors and 5% random connection probability",
+		population: [
+			{strategy:"tft", count:6},
+			{strategy:"all_d", count:6},
+			{strategy:"all_c", count:6},
+			{strategy:"grudge", count:6},
+			{strategy:"prober", count:6},
+			{strategy:"tf2t", count:6},
+			{strategy:"pavlov", count:6},
+			{strategy:"random", count:8}
+		],
+		connections: {
+			global: 0,
+			randomProbability: 5,
+			strategyCounts: {
+				"tft": 0,
+				"all_d": 0,
+				"prober": 0,
+				"all_c": 0
+			},
+			strategyShuffle: {
+				"tft": false,
+				"all_d": false,
+				"prober": false,
+				"all_c": false
+			}
+		},
+		payoffs: {
+			P: 0,
+			S: -1,
+			R: 2,
+			T: 3
+		},
+		rules: {
+			turns: 10,
+			evolution: 5,
+			noise: 0.05
+		}
+	},
+	"internet_society_evil": {
+		name: "Internet Society with Sprinkle of Evilness",
+		description: "Same as Internet Society but with 5% random connections, Cheaters have 4 connections with shuffle enabled",
+		population: [
+			{strategy:"tft", count:6},
+			{strategy:"all_d", count:6},
+			{strategy:"all_c", count:6},
+			{strategy:"grudge", count:6},
+			{strategy:"prober", count:6},
+			{strategy:"tf2t", count:6},
+			{strategy:"pavlov", count:6},
+			{strategy:"random", count:8}
+		],
+		connections: {
+			global: 0,
+			randomProbability: 5,
+			strategyCounts: {
+				"tft": 0,
+				"all_d": 4,
+				"prober": 0,
+				"all_c": 0
+			},
+			strategyShuffle: {
+				"tft": false,
+				"all_d": true,
+				"prober": false,
+				"all_c": false
+			}
+		},
+		payoffs: {
+			P: 0,
+			S: -1,
+			R: 2,
+			T: 3
+		},
+		rules: {
+			turns: 10,
+			evolution: 5,
+			noise: 0.05
+		}
+	},
+	"community_with_goodness": {
+		name: "A community blessed by cooperators",
+		description: "Each player connects to 6 neighbors, no random connections, and Cooperators connect to 48 neighbors",
+		population: [
+			{strategy:"tft", count:6},
+			{strategy:"all_d", count:6},
+			{strategy:"all_c", count:6},
+			{strategy:"grudge", count:6},
+			{strategy:"prober", count:6},
+			{strategy:"tf2t", count:6},
+			{strategy:"pavlov", count:6},
+			{strategy:"random", count:8}
+		],
+		connections: {
+			global: 6,
+			randomProbability: 0,
+			strategyCounts: {
+				"tft": 0,
+				"all_d": 0,
+				"prober": 0,
+				"all_c": 48
+			},
+			strategyShuffle: {
+				"tft": false,
+				"all_d": false,
+				"prober": false,
+				"all_c": false
+			}
+		},
+		payoffs: {
+			P: 0,
+			S: -1,
+			R: 2,
+			T: 3
+		},
+		rules: {
+			turns: 10,
+			evolution: 5,
+			noise: 0.05
+		}
 	}
 	// More presets can be added here easily
 };
