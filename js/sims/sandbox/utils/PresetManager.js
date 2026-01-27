@@ -267,6 +267,14 @@ PresetManager.applyPreset = function(presetId){
 			}
 		}
 		if(preset.connections.strategyShuffle){
+			// First, reset all strategy shuffle modes to false
+			var allStrategies = ["tft", "all_d", "prober", "all_c"];
+			for(var i=0; i<allStrategies.length; i++){
+				var strategy = allStrategies[i];
+				Tournament.STRATEGY_SHUFFLE_MODE[strategy] = false;
+				publish("rules/strategy_shuffle/"+strategy, [false]);
+			}
+			// Then apply the preset's shuffle modes
 			Tournament.STRATEGY_SHUFFLE_MODE = JSON.parse(JSON.stringify(preset.connections.strategyShuffle));
 			for(var strategy in preset.connections.strategyShuffle){
 				publish("rules/strategy_shuffle/"+strategy, [preset.connections.strategyShuffle[strategy]]);
