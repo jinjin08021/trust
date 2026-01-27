@@ -16,6 +16,7 @@ function SandboxUI(config){
 	// Compose components
 	self.totalScore = new TotalScoreLabel({slideshow: self.slideshow});
 	self.controlButtons = new ControlButtons({slideshow: self.slideshow});
+	self.presetSelector = new PresetSelector({slideshow: self.slideshow});
 	
 	// Create pages
 	var populationPage = new PopulationPage({slideshow: self.slideshow});
@@ -39,6 +40,7 @@ function SandboxUI(config){
 	// Assemble DOM
 	dom.appendChild(self.totalScore.dom);
 	dom.appendChild(self.controlButtons.dom);
+	dom.appendChild(self.presetSelector.dom);
 	dom.appendChild(self.tabSystem.dom);
 
 	/////////////////////////////////////////
@@ -61,6 +63,7 @@ function SandboxUI(config){
 		// Cleanup components
 		if(self.totalScore.remove) self.totalScore.remove();
 		if(self.controlButtons.remove) self.controlButtons.remove();
+		if(self.presetSelector.remove) self.presetSelector.remove();
 		unlisten(self);
 		_remove(self);
 	};

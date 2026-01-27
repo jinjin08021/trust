@@ -278,9 +278,62 @@ s{
 /****** SANDBOX UI *******/
 /*************************/
 
+/* Preset Selector */
+.sandbox_preset_selector{
+	position: fixed;
+	right: 200px;
+	top: calc(60% - 280px); /* Position above sandbox_tabs (tabs center - half tabs height - margin) */
+	transform: translateY(-50%);
+	background: #fff;
+	padding: 12px 16px;
+	border: 2px solid #ddd;
+	border-radius: 8px;
+	box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+	z-index: 1001;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	width: 500px;
+	box-sizing: border-box;
+}
+
+.sandbox_preset_label{
+	font-size: 16px;
+	font-weight: bold;
+	color: #333;
+	font-family: 'FuturaHandwritten', sans-serif;
+	white-space: nowrap;
+}
+
+.sandbox_preset_dropdown{
+	font-size: 16px;
+	font-family: 'FuturaHandwritten', sans-serif;
+	padding: 8px 12px;
+	border: 2px solid #ccc;
+	border-radius: 4px;
+	background: #fff;
+	color: #333;
+	cursor: pointer;
+	flex: 1;
+	outline: none;
+	transition: border-color 0.2s ease;
+}
+
+.sandbox_preset_dropdown:hover{
+	border-color: #999;
+}
+
+.sandbox_preset_dropdown:focus{
+	border-color: #4089DD;
+}
+
+.sandbox_preset_dropdown option{
+	padding: 8px;
+}
+
 #sandbox_tabs{
 	position: fixed;
-	right: 20px; top: 50%;
+	right: 200px; top: 60%;
 	transform: translateY(-50%);
 	background: #fff;
 	width:500px; height:470px;
