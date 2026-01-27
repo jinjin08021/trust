@@ -388,11 +388,60 @@ function Tournament(config){
 
 	};
 
+	// Shuffle agents in the ring (by strategy groups)
+	self.shuffleAgents = function(){
+		// Group agents by strategy
+		var groupsByStrategy = {};
+		for(var i=0; i<self.agents.length; i++){
+			var agent = self.agents[i];
+			var strategy = agent.strategyName;
+			if(!groupsByStrategy[strategy]){
+				groupsByStrategy[strategy] = [];
+			}
+			groupsByStrategy[strategy].push(agent);
+		}
+		
+		// Get array of strategies and shuffle the order
+		var strategies = Object.keys(groupsByStrategy);
+		// Fisher-Yates shuffle for strategies
+		for(var i = strategies.length - 1; i > 0; i--){
+			var j = Math.floor(Math.random() * (i + 1));
+			var temp = strategies[i];
+			strategies[i] = strategies[j];
+			strategies[j] = temp;
+		}
+		
+		// Rebuild agents array with shuffled groups (keeping each group together)
+		var newAgentsArray = [];
+		for(var i=0; i<strategies.length; i++){
+			var strategy = strategies[i];
+			var group = groupsByStrategy[strategy];
+			// Add all agents from this strategy group
+			for(var j=0; j<group.length; j++){
+				newAgentsArray.push(group[j]);
+			}
+		}
+		
+		// Update the agents array
+		self.agents = newAgentsArray;
+		
+		// Update gotoAngle for each agent based on their new position
+		for(var i=0; i<self.agents.length; i++){
+			var agent = self.agents[i];
+			var angle = (i/self.agents.length)*Math.TAU - Math.TAU/4;
+			agent.gotoAngle = angle;
+		}
+		
+		// Recreate network with new positions
+		self.createNetwork();
+	};
+
 	// ANIMATE the PLAYING, ELIMINATING, or REPRODUCING
 	var STAGE_REST = 0;
 	var STAGE_PLAY = 1;
 	var STAGE_ELIMINATE = 2;
 	var STAGE_REPRODUCE = 3;
+	var STAGE_SHUFFLE = 4;
 	self.STAGE = STAGE_REST;
 
 	// AUTOPLAY
@@ -499,6 +548,33 @@ function Tournament(config){
 
 		}
 
+		// SHUFFLE!
+		if(self.STAGE == STAGE_SHUFFLE){
+
+			// Start
+			if(_tweenTimer==0){
+				self.shuffleAgents();
+			}
+
+			// Middle... animate agents moving to new positions
+			_tweenTimer += 0.05;
+			if(_tweenTimer>1) _tweenTimer=1;
+			for(var i=0;i<self.agents.length;i++){
+				var a = self.agents[i];
+				a.tweenAngle(_tweenTimer);
+				a.updatePosition();
+			}
+			self.sortAgentsByDepth();
+			for(var i=0;i<self.connections.length;i++) self.connections[i].updateGraphics();
+
+			// End
+			if(_tweenTimer>=1){
+				_tweenTimer = 0;
+				self.STAGE = STAGE_REST;
+			}
+
+		}
+
 	};
 	app.ticker.add(_tick);
 
@@ -524,6 +600,13 @@ function Tournament(config){
 		self.STAGE=STAGE_REPRODUCE;
 	};
 	listen(self, "tournament/reproduce", self._startReproduce);
+	self._startShuffle = function(){
+		if(self.STAGE == STAGE_REST){
+			self.STAGE = STAGE_SHUFFLE;
+			_tweenTimer = 0;
+		}
+	};
+	listen(self, "tournament/shuffle", self._startShuffle);
 
 	// Add...
 	self.add = function(){

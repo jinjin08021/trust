@@ -47,47 +47,6 @@ PresetManager.PRESETS = {
 			noise: 0
 		}
 	},
-	"close_knit_community": {
-		name: "Close-Knit Community",
-		description: "Same as Interconnected Society but with only 4 neighbors per player",
-		population: [
-			{strategy:"tft", count:6},
-			{strategy:"all_d", count:6},
-			{strategy:"all_c", count:6},
-			{strategy:"grudge", count:6},
-			{strategy:"prober", count:6},
-			{strategy:"tf2t", count:6},
-			{strategy:"pavlov", count:6},
-			{strategy:"random", count:8}
-		],
-		connections: {
-			global: 4,
-			randomProbability: 0,
-			strategyCounts: {
-				"tft": 0,
-				"all_d": 0,
-				"prober": 0,
-				"all_c": 0
-			},
-			strategyShuffle: {
-				"tft": false,
-				"all_d": false,
-				"prober": false,
-				"all_c": false
-			}
-		},
-		payoffs: {
-			P: 0,
-			S: -1,
-			R: 2,
-			T: 3
-		},
-		rules: {
-			turns: 10,
-			evolution: 5,
-			noise: 0.05
-		}
-	},
 	"randomly_connected_society": {
 		name: "Internet Society",
 		description: "Same as Close-Knit Community but with 0 neighbors and 5% random connection probability",
@@ -191,6 +150,47 @@ PresetManager.PRESETS = {
 				"all_d": 0,
 				"prober": 0,
 				"all_c": 48
+			},
+			strategyShuffle: {
+				"tft": false,
+				"all_d": false,
+				"prober": false,
+				"all_c": false
+			}
+		},
+		payoffs: {
+			P: 0,
+			S: -1,
+			R: 2,
+			T: 3
+		},
+		rules: {
+			turns: 10,
+			evolution: 5,
+			noise: 0.05
+		}
+	},
+	"close_knit_community": {
+		name: "Close-Knit Community",
+		description: "Same as Interconnected Society but with only 4 neighbors per player",
+		population: [
+			{strategy:"tft", count:6},
+			{strategy:"all_d", count:6},
+			{strategy:"all_c", count:6},
+			{strategy:"grudge", count:6},
+			{strategy:"prober", count:6},
+			{strategy:"tf2t", count:6},
+			{strategy:"pavlov", count:6},
+			{strategy:"random", count:8}
+		],
+		connections: {
+			global: 4,
+			randomProbability: 0,
+			strategyCounts: {
+				"tft": 0,
+				"all_d": 0,
+				"prober": 0,
+				"all_c": 0
 			},
 			strategyShuffle: {
 				"tft": false,
