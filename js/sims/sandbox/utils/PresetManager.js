@@ -44,7 +44,7 @@ PresetManager.PRESETS = {
 		rules: {
 			turns: 10,
 			evolution: 5,
-			noise: 0
+			noise: 0.05
 		}
 	},
 	"randomly_connected_society": {
@@ -228,7 +228,7 @@ PresetManager.getCurrentState = function(){
 		rules: {
 			turns: Tournament.NUM_TURNS || 10,
 			evolution: Tournament.SELECTION || 5,
-			noise: PD.NOISE || 0
+			noise: PD.NOISE || 0.05
 		}
 	};
 };

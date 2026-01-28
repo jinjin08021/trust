@@ -166,7 +166,6 @@ function Tournament(config){
 		self.agents = _convertCountToArray(AGENTS);
 
 		// Put 'em in a ring
-		var count = 0;
 		for(var i=0; i<self.agents.length; i++){
 
 			// Angle
@@ -197,26 +196,29 @@ function Tournament(config){
 		// Clear EVERYTHING
 		while(self.connections.length>0) self.connections[0].kill();
 		
-		// Use connection pattern to generate pairs
+		// Use connection pattern to generate pairs & build connections
 		var pairs = self.connectionPattern.generatePairs(self.agents);
-		
-		// Create connections for each pair
-			var flip = false;
+		_buildConnectionsFromPairs(pairs);
+
+	};
+
+	// Helper: given a list of [playerA, playerB] pairs, create TournamentConnection objects.
+	var _buildConnectionsFromPairs = function(pairs){
+		var flip = false;
 		for(var i=0; i<pairs.length; i++){
 			var pair = pairs[i];
 			var playerA = pair[0];
 			var playerB = pair[1];
-				var connection = new TournamentConnection({
-					tournament: self,
-					from: playerA,
-					to: playerB,
-					flower_flip: flip
-				});
-				self.networkContainer.addChild(connection.graphics);
-				self.connections.push(connection);
-				flip = !flip;
+			var connection = new TournamentConnection({
+				tournament: self,
+				from: playerA,
+				to: playerB,
+				flower_flip: flip
+			});
+			self.networkContainer.addChild(connection.graphics);
+			self.connections.push(connection);
+			flip = !flip;
 		}
-
 	};
 	self.actuallyRemoveConnection = function(connection){
 		var index = self.connections.indexOf(connection);
@@ -323,20 +325,7 @@ function Tournament(config){
 
 	// Get rid of X worst
 	self.eliminateBottom = function(X){
-
-		// The worst X
-		var worst = self.agentsSorted.slice(0,X);
-
-		// For each one, subtract from AGENTS count, and KILL.
-		for(var i=0; i<worst.length; i++){
-			var badAgent = worst[i];
-			var config = AGENTS.find(function(config){
-				return config.strategy==badAgent.strategyName;
-			});
-			config.count--; // remove one
-			badAgent.eliminate(); // ELIMINATE
-		}
-
+		AgentManager.eliminateBottom(X);
 	};
 	self.actuallyRemoveAgent = function(agent){
 		var index = self.agents.indexOf(agent);
@@ -345,98 +334,151 @@ function Tournament(config){
 
 	// Reproduce the top X
 	self.reproduceTop = function(X){
-
-		// The top X
-		var best = self.agentsSorted.slice(self.agentsSorted.length-X, self.agentsSorted.length);
-
-		// For each one, add to AGENTS count
-		for(var i=0; i<best.length; i++){
-			var goodAgent = best[i];
-			var config = AGENTS.find(function(config){
-				return config.strategy==goodAgent.strategyName;
-			});
-			config.count++; // ADD one
-		}
-
-		// ADD agents, splicing right AFTER
-		for(var i=0; i<best.length; i++){
-
-			// Properties...
-			var goodAgent = best[i];
-			var angle = goodAgent.angle + 0.1;
-			var strategy = goodAgent.strategyName;
-
-			// Create agent!
-			var agent = new TournamentAgent({angle:angle, strategy:strategy, tournament:self});
-			self.agentsContainer.addChild(agent.graphics);
-
-			// Splice RIGHT AFTER
-			var index = self.agents.indexOf(goodAgent);
-			self.agents.splice(index, 0, agent);
-
-		}
-
-		// What are the agents' GO-TO angles?
-		for(var i=0; i<self.agents.length; i++){
-			var agent = self.agents[i];
-			var angle = (i/self.agents.length)*Math.TAU - Math.TAU/4;
-			agent.gotoAngle = angle;
-		}
-
-		// ADD connections
-		self.createNetwork();
-
+		AgentManager.reproduceTop(X);
 	};
 
 	// Shuffle agents in the ring (by strategy groups)
 	self.shuffleAgents = function(){
-		// Group agents by strategy
-		var groupsByStrategy = {};
-		for(var i=0; i<self.agents.length; i++){
-			var agent = self.agents[i];
-			var strategy = agent.strategyName;
-			if(!groupsByStrategy[strategy]){
-				groupsByStrategy[strategy] = [];
-			}
-			groupsByStrategy[strategy].push(agent);
-		}
-		
-		// Get array of strategies and shuffle the order
-		var strategies = Object.keys(groupsByStrategy);
-		// Fisher-Yates shuffle for strategies
-		for(var i = strategies.length - 1; i > 0; i--){
-			var j = Math.floor(Math.random() * (i + 1));
-			var temp = strategies[i];
-			strategies[i] = strategies[j];
-			strategies[j] = temp;
-		}
-		
-		// Rebuild agents array with shuffled groups (keeping each group together)
-		var newAgentsArray = [];
-		for(var i=0; i<strategies.length; i++){
-			var strategy = strategies[i];
-			var group = groupsByStrategy[strategy];
-			// Add all agents from this strategy group
-			for(var j=0; j<group.length; j++){
-				newAgentsArray.push(group[j]);
-			}
-		}
-		
-		// Update the agents array
-		self.agents = newAgentsArray;
-		
-		// Update gotoAngle for each agent based on their new position
-		for(var i=0; i<self.agents.length; i++){
-			var agent = self.agents[i];
-			var angle = (i/self.agents.length)*Math.TAU - Math.TAU/4;
-			agent.gotoAngle = angle;
-		}
-		
-		// Recreate network with new positions
-		self.createNetwork();
+		AgentManager.shuffleAgents();
 	};
 
-	// ANIMATE the PLAYING, ELIMINATING, or REPRODUCING
+	// Agent management helpers, grouped for clarity.
+	var AgentManager = {
+		populateAgents: function(){
+			// Clear EVERYTHING
+			while(self.agents.length>0) self.agents[0].kill();
+			
+			// Convert to an array
+			self.agents = _convertCountToArray(AGENTS);
+
+			// Put 'em in a ring
+			for(var i=0; i<self.agents.length; i++){
+
+				// Angle
+				var angle = (i/self.agents.length)*Math.TAU - Math.TAU/4;
+
+				// What kind of agent?
+				var strategy = self.agents[i];
+				var agent = new TournamentAgent({angle:angle, strategy:strategy, tournament:self});
+				self.agentsContainer.addChild(agent.graphics);
+
+				// Remember me!
+				self.agents[i] = agent;
+
+			}
+
+			// (sort agents by depth)
+			self.sortAgentsByDepth();
+		},
+
+		eliminateBottom: function(X){
+			// The worst X
+			var worst = self.agentsSorted.slice(0,X);
+
+			// For each one, subtract from AGENTS count, and KILL.
+			for(var i=0; i<worst.length; i++){
+				var badAgent = worst[i];
+				var config = AGENTS.find(function(config){
+					return config.strategy==badAgent.strategyName;
+				});
+				config.count--; // remove one
+				badAgent.eliminate(); // ELIMINATE
+			}
+		},
+
+		reproduceTop: function(X){
+			// The top X
+			var best = self.agentsSorted.slice(self.agentsSorted.length-X, self.agentsSorted.length);
+
+			// For each one, add to AGENTS count
+			for(var i=0; i<best.length; i++){
+				var goodAgent = best[i];
+				var config = AGENTS.find(function(config){
+					return config.strategy==goodAgent.strategyName;
+				});
+				config.count++; // ADD one
+			}
+
+			// ADD agents, splicing right AFTER
+			for(var i=0; i<best.length; i++){
+
+				// Properties...
+				var goodAgent = best[i];
+				var angle = goodAgent.angle + 0.1;
+				var strategy = goodAgent.strategyName;
+
+				// Create agent!
+				var agent = new TournamentAgent({angle:angle, strategy:strategy, tournament:self});
+				self.agentsContainer.addChild(agent.graphics);
+
+				// Splice RIGHT AFTER
+				var index = self.agents.indexOf(goodAgent);
+				self.agents.splice(index, 0, agent);
+
+			}
+
+			// What are the agents' GO-TO angles?
+			AgentManager.assignRingAngles();
+
+			// ADD connections
+			self.createNetwork();
+		},
+
+		// Shuffle agents in the ring (by strategy groups)
+		shuffleAgents: function(){
+			// Group agents by strategy
+			var groupsByStrategy = {};
+			for(var i=0; i<self.agents.length; i++){
+				var agent = self.agents[i];
+				var strategy = agent.strategyName;
+				if(!groupsByStrategy[strategy]){
+					groupsByStrategy[strategy] = [];
+				}
+				groupsByStrategy[strategy].push(agent);
+			}
+			
+			// Get array of strategies and shuffle the order
+			var strategies = Object.keys(groupsByStrategy);
+			// Fisher-Yates shuffle for strategies
+			for(var i = strategies.length - 1; i > 0; i--){
+				var j = Math.floor(Math.random() * (i + 1));
+				var temp = strategies[i];
+				strategies[i] = strategies[j];
+				strategies[j] = temp;
+			}
+			
+			// Rebuild agents array with shuffled groups (keeping each group together)
+			var newAgentsArray = [];
+			for(var i=0; i<strategies.length; i++){
+				var strategy = strategies[i];
+				var group = groupsByStrategy[strategy];
+				// Add all agents from this strategy group
+				for(var j=0; j<group.length; j++){
+					newAgentsArray.push(group[j]);
+				}
+			}
+			
+			// Update the agents array
+			self.agents = newAgentsArray;
+			
+			// Update gotoAngle for each agent based on their new position
+			AgentManager.assignRingAngles();
+			
+			// Recreate network with new positions
+			self.createNetwork();
+		},
+
+		// Helper: assign evenly spaced ring angles to all agents and store in gotoAngle.
+		assignRingAngles: function(){
+			for(var i=0; i<self.agents.length; i++){
+				var agent = self.agents[i];
+				var angle = (i/self.agents.length)*Math.TAU - Math.TAU/4;
+				agent.gotoAngle = angle;
+			}
+		}
+	};
+
+	// ANIMATE the PLAYING, ELIMINATING, REPRODUCING, or SHUFFLING
 	var STAGE_REST = 0;
 	var STAGE_PLAY = 1;
 	var STAGE_ELIMINATE = 2;
@@ -477,102 +519,107 @@ function Tournament(config){
 		_nextStep();
 	});
 
-	// ANIMATE
+	//////////////////////////////////////////
+	// STAGE CONTROLLER //////////////////////
+	//////////////////////////////////////////
+
 	var _playIndex = 0;
 	var _tweenTimer = 0;
+
+	// PLAY stage: highlight connections agent-by-agent, then play full tournament.
+	var _updatePlayStage = function(){
+		if(_playIndex>0 && _playIndex<self.agents.length+1) self.agents[_playIndex-1].dehighlightConnections();
+		if(_playIndex>1 && _playIndex<self.agents.length+2) self.agents[_playIndex-2].dehighlightConnections();
+		if(_playIndex<self.agents.length){
+			self.agents[_playIndex].highlightConnections();
+			_playIndex += self.isAutoPlaying ? 2 : 1;
+		}else{
+			self.playOneTournament(); // FOR REAL, NOW.
+			_playIndex = 0;
+			_tweenTimer = 0;
+			self.STAGE = STAGE_REST;
+			publish("tournament/step/completed", ["play"]);
+		}
+	};
+
+	// ELIMINATE stage: remove worst performers.
+	var _updateEliminateStage = function(){
+		self.eliminateBottom(Tournament.SELECTION);
+		_tweenTimer++;
+		if(_tweenTimer==_s(0.3) || self.isAutoPlaying){
+			_tweenTimer = 0;
+			self.STAGE = STAGE_REST;
+			publish("tournament/step/completed", ["eliminate"]);
+		}
+	};
+
+	// REPRODUCE stage: add new agents and tween them into place.
+	var _updateReproduceStage = function(){
+
+		// Start
+		if(_tweenTimer==0){
+			self.reproduceTop(Tournament.SELECTION);
+		}
+
+		// Middle...
+		_tweenTimer += self.isAutoPlaying ? 0.15 : 0.05;
+		if(_tweenTimer>1) _tweenTimer=1;
+		for(var i=0;i<self.agents.length;i++){
+			var a = self.agents[i];
+			a.tweenAngle(_tweenTimer);
+			a.updatePosition();
+		}
+		self.sortAgentsByDepth();
+		for(var i=0;i<self.connections.length;i++) self.connections[i].updateGraphics();
+
+		// End
+		if(_tweenTimer>=1){
+			_tweenTimer = 0;
+			self.STAGE = STAGE_REST;
+			publish("tournament/step/completed", ["reproduce"]);
+		}
+	};
+
+	// SHUFFLE stage: shuffle strategy groups and tween them into new positions.
+	var _updateShuffleStage = function(){
+
+		// Start
+		if(_tweenTimer==0){
+			self.shuffleAgents();
+		}
+
+		// Middle... animate agents moving to new positions
+		_tweenTimer += 0.05;
+		if(_tweenTimer>1) _tweenTimer=1;
+		for(var i=0;i<self.agents.length;i++){
+			var a = self.agents[i];
+			a.tweenAngle(_tweenTimer);
+			a.updatePosition();
+		}
+		self.sortAgentsByDepth();
+		for(var i=0;i<self.connections.length;i++) self.connections[i].updateGraphics();
+
+		// End
+		if(_tweenTimer>=1){
+			_tweenTimer = 0;
+			self.STAGE = STAGE_REST;
+		}
+	};
+
+	// Main ticker: delegates to the appropriate stage updater.
 	var _tick = function(delta){
 
-		// Tick
+		// Tick tweens
 		Tween.tick();
 
-		// PLAY!
 		if(self.STAGE == STAGE_PLAY){
-			/*if(self.isAutoPlaying){
-				self.playOneTournament(); // FOR REAL, NOW.
-				_playIndex = 0;
-				_tweenTimer = 0;
-				self.STAGE = STAGE_REST;
-				publish("tournament/step/completed", ["play"]);
-			}else{*/
-				if(_playIndex>0 && _playIndex<self.agents.length+1) self.agents[_playIndex-1].dehighlightConnections();
-				if(_playIndex>1 && _playIndex<self.agents.length+2) self.agents[_playIndex-2].dehighlightConnections();
-				if(_playIndex<self.agents.length){
-					self.agents[_playIndex].highlightConnections();
-					_playIndex += self.isAutoPlaying ? 2 : 1;
-				}else{
-					self.playOneTournament(); // FOR REAL, NOW.
-					_playIndex = 0;
-					_tweenTimer = 0;
-					self.STAGE = STAGE_REST;
-					publish("tournament/step/completed", ["play"]);
-				}
-			//}
-		}
-
-		// ELIMINATE!
-		if(self.STAGE == STAGE_ELIMINATE){
-			self.eliminateBottom(Tournament.SELECTION);
-			_tweenTimer++;
-			if(_tweenTimer==_s(0.3) || self.isAutoPlaying){
-				_tweenTimer = 0;
-				self.STAGE = STAGE_REST;
-				publish("tournament/step/completed", ["eliminate"]);
-			}
-		}
-
-		// REPRODUCE!
-		if(self.STAGE == STAGE_REPRODUCE){
-
-			// Start
-			if(_tweenTimer==0){
-				self.reproduceTop(Tournament.SELECTION);
-			}
-
-			// Middle...
-			_tweenTimer += self.isAutoPlaying ? 0.15 : 0.05;
-			if(_tweenTimer>1) _tweenTimer=1;
-			for(var i=0;i<self.agents.length;i++){
-				var a = self.agents[i];
-				a.tweenAngle(_tweenTimer);
-				a.updatePosition();
-			}
-			self.sortAgentsByDepth();
-			for(var i=0;i<self.connections.length;i++) self.connections[i].updateGraphics();
-
-			// End
-			if(_tweenTimer>=1){
-				_tweenTimer = 0;
-				self.STAGE = STAGE_REST;
-				publish("tournament/step/completed", ["reproduce"]);
-			}
-
-		}
-
-		// SHUFFLE!
-		if(self.STAGE == STAGE_SHUFFLE){
-
-			// Start
-			if(_tweenTimer==0){
-				self.shuffleAgents();
-			}
-
-			// Middle... animate agents moving to new positions
-			_tweenTimer += 0.05;
-			if(_tweenTimer>1) _tweenTimer=1;
-			for(var i=0;i<self.agents.length;i++){
-				var a = self.agents[i];
-				a.tweenAngle(_tweenTimer);
-				a.updatePosition();
-			}
-			self.sortAgentsByDepth();
-			for(var i=0;i<self.connections.length;i++) self.connections[i].updateGraphics();
-
-			// End
-			if(_tweenTimer>=1){
-				_tweenTimer = 0;
-				self.STAGE = STAGE_REST;
-			}
-
+			_updatePlayStage();
+		}else if(self.STAGE == STAGE_ELIMINATE){
+			_updateEliminateStage();
+		}else if(self.STAGE == STAGE_REPRODUCE){
+			_updateReproduceStage();
+		}else if(self.STAGE == STAGE_SHUFFLE){
+			_updateShuffleStage();
 		}
 
 	};
